@@ -1,0 +1,15 @@
+name: apk_lan_share_backend
+description: "Companion HTTP server for APK LAN Share — receives APK uploads from the Flutter web UI, stages them on disk and serves them to devices on the LAN."
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  shelf: ^1.4.2
+  mime: ^2.0.0
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.0.0

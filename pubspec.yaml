@@ -1,0 +1,32 @@
+name: apk_lan_share
+description: "LAN APK sharing dashboard — stage Android APKs locally and hand out a QR download link to devices on the same Wi-Fi."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  # QR code rendering for the share link.
+  qr_flutter: ^4.1.0
+  # "Browse…" file selection dialog (works on Flutter Web).
+  file_picker: ^13.1.0
+  # Native drag-and-drop zone, including HTML5 drops on the web build.
+  desktop_drop: ^0.8.4
+  # HTTP client used for the health check / info call.
+  http: ^1.6.0
+  # Browser interop (XMLHttpRequest) so uploads report real byte progress.
+  web: ^1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
