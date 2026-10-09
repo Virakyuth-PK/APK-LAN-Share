@@ -52,3 +52,7 @@ backend/.dart_tool/
 backend/pubspec.lock
 backend/public/
 backend/.idea/
+
+# Run logs
+.run_logs/
+

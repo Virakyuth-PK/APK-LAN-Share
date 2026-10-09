@@ -23,7 +23,11 @@ class _DropZoneState extends State<DropZone> {
 
   ShareController get _controller => widget.controller;
 
-  Future<void> _browse() async {
+  Future<void> _onUploadClick() async {
+    await _pickFile();
+  }
+
+  Future<void> _pickFile() async {
     if (_controller.busy) return;
     final picked = await FilePicker.pickFiles(
       dialogTitle: 'Select an APK to share',
@@ -107,7 +111,7 @@ class _DropZoneState extends State<DropZone> {
               type: MaterialType.transparency,
               child: InkWell(
                 borderRadius: BorderRadius.circular(26),
-                onTap: busy ? null : _browse,
+                onTap: busy ? null : _onUploadClick,
                 child: DashedRRectBorder(
                   color: borderColor,
                   child: AnimatedSwitcher(
@@ -197,6 +201,12 @@ class _DropZoneState extends State<DropZone> {
           style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: 18),
+        FilledButton.icon(
+          onPressed: _onUploadClick,
+          icon: const Icon(Icons.upload_file_outlined, size: 18),
+          label: const Text('Upload APK'),
+        ),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -428,3 +438,4 @@ class _HintChip extends StatelessWidget {
     );
   }
 }
+
