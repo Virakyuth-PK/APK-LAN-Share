@@ -22,10 +22,8 @@ class PanelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
-        );
+    final titleStyle = Theme.of(context).textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.2);
 
     return Card(
       child: Padding(
@@ -55,19 +53,14 @@ class PanelCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           subtitle!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
+                          style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ],
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 12),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 12), trailing!],
               ],
             ),
             const SizedBox(height: 18),
@@ -130,10 +123,7 @@ class ConnectionBadge extends StatelessWidget {
             SizedBox(
               width: 13,
               height: 13,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: color,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
             )
           else
             Icon(icon, size: 15, color: color),

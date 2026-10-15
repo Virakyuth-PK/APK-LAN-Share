@@ -45,8 +45,10 @@ class _QrShareCardState extends State<QrShareCard> {
           trailing: url == null
               ? null
               : Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF16A34A).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
@@ -57,8 +59,11 @@ class _QrShareCardState extends State<QrShareCard> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded,
-                          size: 14, color: Color(0xFF16A34A)),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 14,
+                        color: Color(0xFF16A34A),
+                      ),
                       SizedBox(width: 6),
                       Text(
                         'Live',
@@ -71,7 +76,9 @@ class _QrShareCardState extends State<QrShareCard> {
                     ],
                   ),
                 ),
-          child: url == null ? _placeholder(context) : _qrBody(context, url, file?.name),
+          child: url == null
+              ? _placeholder(context)
+              : _qrBody(context, url, file?.name),
         );
       },
     );
@@ -157,8 +164,9 @@ class _QrShareCardState extends State<QrShareCard> {
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.7),
+            ),
           ),
           child: Row(
             children: [
@@ -182,14 +190,10 @@ class _QrShareCardState extends State<QrShareCard> {
                   visualDensity: VisualDensity.compact,
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
-                    transitionBuilder: (child, animation) => ScaleTransition(
-                      scale: animation,
-                      child: child,
-                    ),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
                     child: Icon(
-                      _copied
-                          ? Icons.check_rounded
-                          : Icons.copy_rounded,
+                      _copied ? Icons.check_rounded : Icons.copy_rounded,
                       key: ValueKey(_copied),
                       size: 18,
                       color: _copied ? const Color(0xFF16A34A) : null,

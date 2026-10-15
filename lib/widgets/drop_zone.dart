@@ -1,10 +1,10 @@
-import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../models/share_models.dart';
 import '../state/share_controller.dart';
 import '../util/formatters.dart';
+import '../util/web_drop.dart';
 import 'dashed_border.dart';
 
 /// Interactive staging area: drag-and-drop or browse for an `.apk`, then
@@ -41,28 +41,42 @@ class _DropZoneState extends State<DropZone> {
     await _controller.stageFile(fileName: file.name, bytes: bytes);
   }
 
-  Future<void> _onDrop(DropDoneDetails details) async {
-    setState(() => _dragging = false);
-    if (_controller.busy) return;
+  final GlobalKey _zoneKey = GlobalKey();
+  late final WebDropListener _dropListener = WebDropListener(
+    bounds: () {
+      final box = _zoneKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) return null;
+      return box.localToGlobal(Offset.zero) & box.size;
+    },
+    onHover: (hovering) {
+      if (!mounted || _controller.busy && hovering) return;
+      if (_dragging != hovering) setState(() => _dragging = hovering);
+    },
+    onDrop: _onDrop,
+  );
 
-    DropItem? apk;
-    for (final item in details.files) {
-      if (item.name.toLowerCase().endsWith('.apk')) {
-        apk = item;
-        break;
-      }
-    }
-    if (apk == null) {
+  @override
+  void initState() {
+    super.initState();
+    _dropListener.attach();
+  }
+
+  @override
+  void dispose() {
+    _dropListener.detach();
+    super.dispose();
+  }
+
+  Future<void> _onDrop(DroppedFile file) async {
+    if (!mounted || _controller.busy) return;
+    if (!file.name.toLowerCase().endsWith('.apk')) {
       _controller.addLog(
         'Ignored drop — only .apk files can be shared.',
         LogKind.error,
       );
       return;
     }
-
-    final bytes = await apk.readAsBytes();
-    if (!mounted) return;
-    await _controller.stageFile(fileName: apk.name, bytes: bytes);
+    await _controller.stageFile(fileName: file.name, bytes: file.bytes);
   }
 
   @override
@@ -86,11 +100,8 @@ class _DropZoneState extends State<DropZone> {
           borderColor = scheme.outline;
         }
 
-        return DropTarget(
-          enable: !busy,
-          onDragEntered: (_) => setState(() => _dragging = true),
-          onDragExited: (_) => setState(() => _dragging = false),
-          onDragDone: _onDrop,
+        return KeyedSubtree(
+          key: _zoneKey,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOut,
@@ -114,20 +125,23 @@ class _DropZoneState extends State<DropZone> {
                 onTap: busy ? null : _onUploadClick,
                 child: DashedRRectBorder(
                   color: borderColor,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOutCubic,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween(
-                          begin: const Offset(0, 0.04),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOutCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0, 0.04),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
                       ),
+                      child: _buildContent(context, stage),
                     ),
-                    child: _buildContent(context, stage),
                   ),
                 ),
               ),
@@ -158,10 +172,8 @@ class _DropZoneState extends State<DropZone> {
         const SizedBox(height: 14),
         Text(
           'Release to stage this APK',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-              ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.3),
         ),
       ],
     );
@@ -264,8 +276,9 @@ class _DropZoneState extends State<DropZone> {
                     reading
                         ? 'Reading ${formatBytes(_controller.activeFileSize ?? 0)} from disk…'
                         : 'Uploading ${formatBytes(_controller.activeFileSize ?? 0)} to the companion server…',
-                    style: text.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
+                    style: text.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -297,8 +310,7 @@ class _DropZoneState extends State<DropZone> {
             Expanded(
               child: Text(
                 'Keep this tab open until staging completes.',
-                style: text.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ),
           ],
@@ -438,4 +450,3 @@ class _HintChip extends StatelessWidget {
     );
   }
 }
-

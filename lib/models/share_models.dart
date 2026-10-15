@@ -38,13 +38,13 @@ class HostedFile {
   });
 
   factory HostedFile.fromJson(Map<String, dynamic> json) => HostedFile(
-        name: json['name'] as String? ?? '',
-        size: (json['size'] as num?)?.toInt() ?? 0,
-        uploadedAt:
-            DateTime.tryParse(json['uploadedAt'] as String? ?? '') ??
-                DateTime.now(),
-        downloadPath: json['downloadPath'] as String? ?? '',
-      );
+    name: json['name'] as String? ?? '',
+    size: (json['size'] as num?)?.toInt() ?? 0,
+    uploadedAt:
+        DateTime.tryParse(json['uploadedAt'] as String? ?? '') ??
+        DateTime.now(),
+    downloadPath: json['downloadPath'] as String? ?? '',
+  );
 
   final String name;
   final int size;
@@ -69,16 +69,16 @@ class BackendInfo {
   });
 
   factory BackendInfo.fromJson(Map<String, dynamic> json) => BackendInfo(
-        lanIp: json['lanIp'] as String? ?? '127.0.0.1',
-        port: (json['port'] as num?)?.toInt() ?? 8080,
-        baseUrl: json['baseUrl'] as String? ?? '',
-        storageDir: json['storageDir'] as String? ?? '',
-        servesUi: json['servesUi'] as bool? ?? false,
-        files: (json['files'] as List<dynamic>? ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(HostedFile.fromJson)
-            .toList(),
-      );
+    lanIp: json['lanIp'] as String? ?? '127.0.0.1',
+    port: (json['port'] as num?)?.toInt() ?? 8080,
+    baseUrl: json['baseUrl'] as String? ?? '',
+    storageDir: json['storageDir'] as String? ?? '',
+    servesUi: json['servesUi'] as bool? ?? false,
+    files: (json['files'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(HostedFile.fromJson)
+        .toList(),
+  );
 
   final String lanIp;
   final int port;

@@ -16,7 +16,7 @@ String formatBytes(int bytes) {
 
 /// `14:03:09` — used for activity-log timestamps.
 String formatClock(DateTime time) => [
-      time.hour.toString().padLeft(2, '0'),
-      time.minute.toString().padLeft(2, '0'),
-      time.second.toString().padLeft(2, '0'),
-    ].join(':');
+  time.hour.toString().padLeft(2, '0'),
+  time.minute.toString().padLeft(2, '0'),
+  time.second.toString().padLeft(2, '0'),
+].join(':');

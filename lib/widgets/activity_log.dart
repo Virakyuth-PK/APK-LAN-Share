@@ -103,9 +103,7 @@ class _ActivityLogState extends State<ActivityLog> {
           const SizedBox(height: 10),
           Text(
             'Staging and connection events will show up here.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
+            style: Theme.of(context).textTheme.bodySmall
                 ?.copyWith(color: scheme.outline),
           ),
         ],
@@ -122,8 +120,8 @@ class _ActivityLogState extends State<ActivityLog> {
       LogKind.success => const Color(0xFF16A34A),
       LogKind.error => scheme.error,
     };
-    final bool mono = entry.kind == LogKind.transfer ||
-        entry.kind == LogKind.error;
+    final bool mono =
+        entry.kind == LogKind.transfer || entry.kind == LogKind.error;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),

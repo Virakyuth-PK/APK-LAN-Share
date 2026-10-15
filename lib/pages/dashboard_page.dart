@@ -6,6 +6,7 @@ import '../widgets/connection_panel.dart';
 import '../widgets/drop_zone.dart';
 import '../widgets/panel_card.dart';
 import '../widgets/qr_share_card.dart';
+import '../widgets/staged_files_card.dart';
 
 /// Two-column dashboard that collapses to one column on narrow windows.
 class DashboardPage extends StatefulWidget {
@@ -90,8 +91,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : null,
                       child: DropZone(controller: _controller),
@@ -116,11 +116,15 @@ class _DashboardPageState extends State<DashboardPage> {
                               ],
                             ),
                             const SizedBox(height: 20),
+                            StagedFilesCard(controller: _controller),
+                            const SizedBox(height: 20),
                             connection,
                           ] else ...[
                             dropZone,
                             const SizedBox(height: 20),
                             qrCard,
+                            const SizedBox(height: 20),
+                            StagedFilesCard(controller: _controller),
                             const SizedBox(height: 20),
                             connection,
                           ],

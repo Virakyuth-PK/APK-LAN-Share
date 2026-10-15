@@ -38,17 +38,17 @@ class ShareController extends ChangeNotifier {
   bool get busy => stage == ShareStage.reading || stage == ShareStage.uploading;
 
   /// Origin other devices reach this machine on (never `127.0.0.1`).
-  String get shareOrigin =>
-      'http://${host.isEmpty ? '127.0.0.1' : host}:$port';
+  String get shareOrigin => 'http://${host.isEmpty ? '127.0.0.1' : host}:$port';
 
   /// The exact URL encoded into the QR code.
-  String? get downloadUrl => staged == null
-      ? null
-      : '$shareOrigin${staged!.downloadPath}';
+  String? get downloadUrl =>
+      staged == null ? null : '$shareOrigin${staged!.downloadPath}';
 
   ShareController() {
-    addLog('Dashboard ready — looking for the companion backend…',
-        LogKind.info);
+    addLog(
+      'Dashboard ready — looking for the companion backend…',
+      LogKind.info,
+    );
   }
 
   // --- connection ---------------------------------------------------------
@@ -59,8 +59,7 @@ class ShareController extends ChangeNotifier {
     if (connecting) return;
     connecting = true;
     if (verbose) {
-      addLog('Scanning for the companion backend on port $port…',
-          LogKind.info);
+      addLog('Scanning for the companion backend on port $port…', LogKind.info);
     } else {
       notifyListeners();
     }
@@ -195,8 +194,10 @@ class ShareController extends ChangeNotifier {
 
     stage = ShareStage.uploading;
     progress = 0.06;
-    addLog('Uploading ${formatBytes(bytes.length)} to ${_api!.origin}…',
-        LogKind.transfer);
+    addLog(
+      'Uploading ${formatBytes(bytes.length)} to ${_api!.origin}…',
+      LogKind.transfer,
+    );
     notifyListeners();
 
     try {
@@ -213,8 +214,11 @@ class ShareController extends ChangeNotifier {
       progress = 1;
       activeFileName = file.name;
       activeFileSize = file.size;
-      addLog('${file.name} staged — ${formatBytes(file.size)} ready to share',
-          LogKind.success);
+      addLog(
+        '${file.name} staged — ${formatBytes(file.size)} ready to share',
+        LogKind.success,
+      );
+      await refreshFiles();
       final url = downloadUrl;
       if (url != null) addLog(url, LogKind.transfer);
     } on ShareApiException catch (error) {
@@ -227,6 +231,45 @@ class ShareController extends ChangeNotifier {
       addLog('Upload failed — $error', LogKind.error);
     }
     notifyListeners();
+  }
+
+  /// All APKs currently on the backend, newest first.
+  List<HostedFile> get files => backend?.files ?? const [];
+
+  /// Shows [file] in the QR card.
+  void selectFile(HostedFile file) {
+    if (busy) return;
+    staged = file;
+    stage = ShareStage.ready;
+    progress = 1;
+    activeFileName = file.name;
+    activeFileSize = file.size;
+    failureMessage = null;
+    addLog('Sharing ${file.name}', LogKind.info);
+  }
+
+  /// Removes [file] from the backend and refreshes the list.
+  Future<void> deleteFile(HostedFile file) async {
+    final api = _api;
+    if (api == null || busy) return;
+    try {
+      await api.deleteApk(file.name);
+      addLog('${file.name} removed', LogKind.info);
+      if (staged?.name == file.name) clearStaged();
+      await refreshFiles();
+    } catch (error) {
+      addLog('Could not remove ${file.name} — $error', LogKind.error);
+    }
+  }
+
+  /// Re-reads `/info` so the file list matches the disk.
+  Future<void> refreshFiles() async {
+    final api = _api;
+    if (api == null) return;
+    try {
+      backend = await api.fetchInfo();
+      notifyListeners();
+    } catch (_) {}
   }
 
   /// Back to the idle drop zone (files stay on the server).

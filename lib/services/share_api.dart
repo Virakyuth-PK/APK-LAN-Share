@@ -38,9 +38,12 @@ class ShareApi {
   }) async {
     final response = await _client
         .get(Uri.parse('$origin/info'))
-        .timeout(timeout, onTimeout: () {
-      throw const ShareApiException('Backend did not respond in time.');
-    });
+        .timeout(
+          timeout,
+          onTimeout: () {
+            throw const ShareApiException('Backend did not respond in time.');
+          },
+        );
 
     if (response.statusCode != 200) {
       throw ShareApiException(
@@ -74,8 +77,8 @@ class ShareApi {
     void Function(double progress)? onProgress,
   }) {
     final completer = Completer<HostedFile>();
-    final uri =
-        Uri.parse('$origin/upload').replace(queryParameters: {'name': fileName});
+    final uri = Uri.parse('$origin/upload')
+        .replace(queryParameters: {'name': fileName});
     final xhr = web.XMLHttpRequest();
 
     void fail(String message) {
@@ -89,9 +92,7 @@ class ShareApi {
     xhr.setRequestHeader('Accept', 'application/json');
 
     xhr.upload.onprogress = ((web.ProgressEvent event) {
-      if (onProgress != null &&
-          event.lengthComputable &&
-          event.total > 0) {
+      if (onProgress != null && event.lengthComputable && event.total > 0) {
         final value = (event.loaded / event.total).clamp(0.0, 1.0);
         onProgress(value);
       }
@@ -104,8 +105,7 @@ class ShareApi {
         var message = 'Backend answered HTTP $status.';
         try {
           final decoded = jsonDecode(body);
-          if (decoded is Map<String, dynamic> &&
-              decoded['error'] is String) {
+          if (decoded is Map<String, dynamic> && decoded['error'] is String) {
             message = decoded['error'] as String;
           }
         } catch (_) {
@@ -135,14 +135,33 @@ class ShareApi {
     }.toJS);
 
     xhr.onerror = ((web.Event _) {
-      fail('Network error while uploading to $origin — is the companion '
-          'backend still running?');
+      fail(
+        'Network error while uploading to $origin — is the companion '
+        'backend still running?',
+      );
     }.toJS);
     xhr.ontimeout = ((web.Event _) => fail('Upload timed out.')).toJS;
     xhr.onabort = ((web.Event _) => fail('Upload was aborted.')).toJS;
 
     xhr.send(bytes.toJS);
     return completer.future;
+  }
+
+  /// `DELETE /files/<name>` — removes a staged APK from the backend.
+  Future<void> deleteApk(String fileName) async {
+    final response = await _client
+        .delete(Uri.parse('$origin/files/${Uri.encodeComponent(fileName)}'))
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode != 200) {
+      var message = 'Backend answered HTTP ${response.statusCode}.';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['error'] is String) {
+          message = decoded['error'] as String;
+        }
+      } catch (_) {}
+      throw ShareApiException(message, statusCode: response.statusCode);
+    }
   }
 
   void dispose() => _client.close();

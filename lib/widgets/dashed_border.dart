@@ -72,10 +72,7 @@ class _DashedRRectPainter extends CustomPainter {
       var distance = 0.0;
       var drawSegment = true;
       while (distance < metric.length) {
-        final length = math.max(
-          0.5,
-          drawSegment ? dashLength : dashGap,
-        );
+        final length = math.max(0.5, drawSegment ? dashLength : dashGap);
         final end = math.min(distance + length, metric.length);
         if (drawSegment) {
           canvas.drawPath(metric.extractPath(distance, end), paint);

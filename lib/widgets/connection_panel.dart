@@ -26,8 +26,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
   void initState() {
     super.initState();
     _hostController = TextEditingController(text: _controller.host);
-    _portController =
-        TextEditingController(text: '${_controller.port}');
+    _portController = TextEditingController(text: '${_controller.port}');
     _controller.addListener(_syncFromController);
   }
 
@@ -125,7 +124,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                   final button = FilledButton.icon(
                     onPressed: connecting ? null : _apply,
                     icon: Icon(
-                      connected ? Icons.refresh_rounded : Icons.play_arrow_rounded,
+                      connected
+                          ? Icons.refresh_rounded
+                          : Icons.play_arrow_rounded,
                       size: 19,
                     ),
                     label: Text(connecting ? 'Connecting…' : 'Reconnect'),
@@ -134,11 +135,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                   if (constraints.maxWidth < 620) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ...fields,
-                        const SizedBox(height: 12),
-                        button,
-                      ],
+                      children: [...fields, const SizedBox(height: 12), button],
                     );
                   }
                   return Row(
@@ -176,8 +173,9 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                             if (_controller.backend != null)
                               Text(
                                 '· storing in ${_controller.backend!.storageDir}',
-                                style: text.bodySmall
-                                    ?.copyWith(color: scheme.outline),
+                                style: text.bodySmall?.copyWith(
+                                  color: scheme.outline,
+                                ),
                               ),
                           ],
                         ),

@@ -64,10 +64,13 @@ Future<void> main(List<String> args) async {
   stdout.writeln('  ✓ LAN address   http://$lan:$port');
   stdout.writeln('  ✓ Staging dir   ${server.storagePath}');
   if (server.uiPath != null) {
-    stdout.writeln('  ✓ Dashboard     http://127.0.0.1:$port  (built Flutter web)');
+    stdout.writeln(
+      '  ✓ Dashboard     http://127.0.0.1:$port  (built Flutter web)',
+    );
   } else {
     stdout.writeln(
-        '  ! Dashboard     not mounted — run `flutter build web` and add --ui build/web');
+      '  ! Dashboard     not mounted — run `flutter build web` and add --ui build/web',
+    );
   }
   stdout.writeln('  ✓ CORS          enabled (Access-Control-Allow-Origin: *)');
   stdout.writeln('  ─────────────────────────────────────────────');
@@ -195,10 +198,13 @@ ServerConfig? _parseArgs(List<String> args) {
 
 /// Looks for `flutter build web` output relative to the working directory.
 String? _autoDetectUiDir() {
-  for (final candidate in ['build/web', '../build/web', 'apk-lan-share/build/web']) {
+  for (final candidate in [
+    'build/web',
+    '../build/web',
+    'apk-lan-share/build/web',
+  ]) {
     final dir = Directory(candidate);
-    if (dir.existsSync() &&
-        File('$candidate/index.html').existsSync()) {
+    if (dir.existsSync() && File('$candidate/index.html').existsSync()) {
       return candidate;
     }
   }

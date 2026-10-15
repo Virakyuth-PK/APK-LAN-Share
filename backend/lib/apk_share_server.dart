@@ -37,6 +37,7 @@ class ServerConfig {
 ///
 /// Routes:
 ///   GET    /info                 -> JSON: LAN IP, port, storage dir, staged files
+///   DELETE `/files/<file>.apk`      -> removes a staged APK
 ///   POST   `/upload?name=<file>.apk` -> raw request body is staged to disk
 ///   GET    `/download/<file>.apk`    -> streams a staged APK
 ///   GET    /                     -> Flutter web dashboard (if `uiDir` set)
@@ -53,8 +54,9 @@ class ApkShareServer {
   late final String storagePath = p.normalize(p.absolute(config.storageDir));
 
   /// Absolute path of the Flutter web build, if mounted.
-  late final String? uiPath =
-      config.uiDir == null ? null : p.normalize(p.absolute(config.uiDir!));
+  late final String? uiPath = config.uiDir == null
+      ? null
+      : p.normalize(p.absolute(config.uiDir!));
 
   /// The LAN IP reported to clients (detected at startup).
   String get lanIp => _lanIp;
@@ -104,15 +106,23 @@ class ApkShareServer {
       if (path == 'info') {
         response = _infoResponse();
       } else if (path.startsWith('download/')) {
-        response = await _serveApk(path.substring('download/'.length), headOnly);
+        response = await _serveApk(
+          path.substring('download/'.length),
+          headOnly,
+          request,
+        );
       } else {
         response = await _serveUi(path, headOnly);
       }
     } else if (method == 'POST' && path == 'upload') {
       response = await _handleUpload(request);
+    } else if (method == 'DELETE' && path.startsWith('files/')) {
+      response = _deleteApk(path.substring('files/'.length));
     } else {
-      response =
-          _json(405, {'ok': false, 'error': 'Method $method not allowed.'});
+      response = _json(405, {
+        'ok': false,
+        'error': 'Method $method not allowed.',
+      });
     }
 
     return _withCors(response);
@@ -121,26 +131,29 @@ class ApkShareServer {
   // ----------------------------------------------------------------- info
 
   Response _infoResponse() => _json(200, {
-        'ok': true,
-        'app': 'APK LAN Share',
-        'version': '1.0.0',
-        'lanIp': _lanIp,
-        'port': config.port,
-        'baseUrl': baseUrl,
-        'storageDir': storagePath,
-        'servesUi': uiPath != null,
-        'files': _stagedFiles().map(_fileJson).toList(),
-      });
+    'ok': true,
+    'app': 'APK LAN Share',
+    'version': '1.0.0',
+    'lanIp': _lanIp,
+    'port': config.port,
+    'baseUrl': baseUrl,
+    'storageDir': storagePath,
+    'servesUi': uiPath != null,
+    'files': _stagedFiles().map(_fileJson).toList(),
+  });
 
   List<File> _stagedFiles() {
     final dir = Directory(storagePath);
     if (!dir.existsSync()) return const [];
-    final files = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => p.extension(f.path).toLowerCase() == '.apk')
-        .toList()
-      ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+    final files =
+        dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => p.extension(f.path).toLowerCase() == '.apk')
+            .toList()
+          ..sort(
+            (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+          );
     return files;
   }
 
@@ -162,7 +175,8 @@ class ApkShareServer {
     if (fileName == null) {
       return _json(400, {
         'ok': false,
-        'error': 'Invalid file name "$rawName". Only plain .apk names are '
+        'error':
+            'Invalid file name "$rawName". Only plain .apk names are '
             'accepted.',
       });
     }
@@ -221,7 +235,11 @@ class ApkShareServer {
 
   // ------------------------------------------------------------ download
 
-  Future<Response> _serveApk(String encodedName, bool headOnly) async {
+  Future<Response> _serveApk(
+    String encodedName,
+    bool headOnly,
+    Request request,
+  ) async {
     String name;
     try {
       name = Uri.decodeComponent(encodedName);
@@ -238,7 +256,8 @@ class ApkShareServer {
     if (!file.existsSync()) {
       return _json(404, {
         'ok': false,
-        'error': 'No staged APK named "$safe". Stage it from the dashboard first.',
+        'error':
+            'No staged APK named "$safe". Stage it from the dashboard first.',
       });
     }
 
@@ -247,7 +266,27 @@ class ApkShareServer {
       contentType: 'application/vnd.android.package-archive',
       downloadName: safe,
       headOnly: headOnly,
+      rangeHeader: request.headers['range'],
     );
+  }
+
+  Response _deleteApk(String encodedName) {
+    String name;
+    try {
+      name = Uri.decodeComponent(encodedName);
+    } on FormatException {
+      return _json(400, {'ok': false, 'error': 'Malformed file name.'});
+    }
+    final safe = sanitizeFileName(name);
+    if (safe == null) {
+      return _json(400, {'ok': false, 'error': 'Invalid file name.'});
+    }
+    final file = File(p.join(storagePath, safe));
+    if (!file.existsSync()) {
+      return _json(404, {'ok': false, 'error': 'No staged APK named "$safe".'});
+    }
+    file.deleteSync();
+    return _json(200, {'ok': true, 'deleted': safe});
   }
 
   // ------------------------------------------------------------------ UI
@@ -287,12 +326,12 @@ class ApkShareServer {
   }
 
   Response _notFoundUi(String rel) => _html(
-        404,
-        '<!doctype html><meta charset="utf-8"><title>404</title>'
-        '<body style="font-family:system-ui;display:grid;place-items:center;'
-        'height:100vh;margin:0">404 — <code>${_escapeHtml(rel)}</code> not found'
-        '</body>',
-      );
+    404,
+    '<!doctype html><meta charset="utf-8"><title>404</title>'
+    '<body style="font-family:system-ui;display:grid;place-items:center;'
+    'height:100vh;margin:0">404 — <code>${_escapeHtml(rel)}</code> not found'
+    '</body>',
+  );
 
   // -------------------------------------------------------------- helpers
 
@@ -301,10 +340,13 @@ class ApkShareServer {
     required String contentType,
     String? downloadName,
     bool headOnly = false,
+    String? rangeHeader,
   }) {
+    final length = file.lengthSync();
     final headers = <String, String>{
       'content-type': contentType,
-      'content-length': '${file.lengthSync()}',
+      'accept-ranges': 'bytes',
+      'content-length': '$length',
       'cache-control': 'no-store',
       'x-content-type-options': 'nosniff',
       if (downloadName != null)
@@ -312,6 +354,42 @@ class ApkShareServer {
             'attachment; filename="${_asciiFallback(downloadName)}"',
     };
     if (headOnly) return Response(200, headers: headers);
+
+    // Single-range support so phones can resume interrupted downloads.
+    final range = rangeHeader == null
+        ? null
+        : RegExp(r'^bytes=(\d*)-(\d*)$').firstMatch(rangeHeader.trim());
+    if (range != null) {
+      final startText = range.group(1)!;
+      final endText = range.group(2)!;
+      int start;
+      int end;
+      if (startText.isEmpty) {
+        final suffix = int.tryParse(endText) ?? 0;
+        start = length - suffix;
+        end = length - 1;
+      } else {
+        start = int.parse(startText);
+        end = endText.isEmpty ? length - 1 : int.parse(endText);
+      }
+      if (start < 0) start = 0;
+      if (end >= length) end = length - 1;
+      if (length == 0 || start > end) {
+        return Response(
+          416,
+          headers: {'content-range': 'bytes */$length', 'content-length': '0'},
+        );
+      }
+      return Response(
+        206,
+        body: file.openRead(start, end + 1),
+        headers: {
+          ...headers,
+          'content-length': '${end - start + 1}',
+          'content-range': 'bytes $start-$end/$length',
+        },
+      );
+    }
     return Response(200, body: file.openRead(), headers: headers);
   }
 
@@ -319,42 +397,42 @@ class ApkShareServer {
       name.replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
 
   Response _json(int status, Map<String, Object> body) => Response(
-        status,
-        body: jsonEncode(body),
-        headers: const {
-          'content-type': 'application/json; charset=utf-8',
-          'cache-control': 'no-store',
-        },
-      );
+    status,
+    body: jsonEncode(body),
+    headers: const {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  );
 
   Response _html(int status, String body) => Response(
-        status,
-        body: body,
-        headers: const {'content-type': 'text/html; charset=utf-8'},
-      );
+    status,
+    body: body,
+    headers: const {'content-type': 'text/html; charset=utf-8'},
+  );
 
   Response _corsPreflight() => Response(
-        204,
-        headers: {
-          'access-control-allow-origin': '*',
-          'access-control-allow-methods': 'GET, HEAD, POST, OPTIONS',
-          'access-control-allow-headers':
-              'Content-Type, Accept, X-Requested-With, X-File-Name',
-          'access-control-expose-headers':
-              'Content-Length, Content-Disposition, Content-Type',
-          'access-control-max-age': '86400',
-          'content-length': '0',
-          'cache-control': 'no-store',
-        },
-      );
+    204,
+    headers: {
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'GET, HEAD, POST, DELETE, OPTIONS',
+      'access-control-allow-headers':
+          'Content-Type, Accept, Range, X-Requested-With, X-File-Name',
+      'access-control-expose-headers':
+          'Content-Length, Content-Disposition, Content-Type, Content-Range',
+      'access-control-max-age': '86400',
+      'content-length': '0',
+      'cache-control': 'no-store',
+    },
+  );
 
   Response _withCors(Response response) => response.change(
-        headers: const {
-          'access-control-allow-origin': '*',
-          'access-control-expose-headers':
-              'Content-Length, Content-Disposition, Content-Type',
-        },
-      );
+    headers: const {
+      'access-control-allow-origin': '*',
+      'access-control-expose-headers':
+          'Content-Length, Content-Disposition, Content-Type',
+    },
+  );
 
   void _logRequest(String message, bool isError) {
     final now = DateTime.now();
@@ -401,7 +479,8 @@ Future<String> detectLanIp() async {
     final scored = <({int score, String ip})>[];
     for (final interface in interfaces) {
       final name = interface.name.toLowerCase();
-      final penalty = name.contains('docker') ||
+      final penalty =
+          name.contains('docker') ||
               name.contains('veth') ||
               name.contains('vmnet') ||
               name.contains('bridge') ||

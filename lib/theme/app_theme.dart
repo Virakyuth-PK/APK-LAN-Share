@@ -12,8 +12,10 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme =
-        ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: brightness,
+    );
 
     OutlineInputBorder border(Color color, {double width = 1.4}) =>
         OutlineInputBorder(
@@ -25,8 +27,9 @@ class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor:
-          isDark ? const Color(0xFF0B0D13) : const Color(0xFFF3F4FB),
+      scaffoldBackgroundColor: isDark
+          ? const Color(0xFF0B0D13)
+          : const Color(0xFFF3F4FB),
       visualDensity: VisualDensity.comfortable,
       splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
@@ -49,16 +52,19 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side:
-              BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+          side: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.55),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         labelStyle: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
         hintStyle: TextStyle(
           color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -91,12 +97,18 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -120,10 +132,7 @@ class AppTheme {
           color: scheme.inverseSurface,
           borderRadius: BorderRadius.circular(10),
         ),
-        textStyle: TextStyle(
-          color: scheme.onInverseSurface,
-          fontSize: 12.5,
-        ),
+        textStyle: TextStyle(color: scheme.onInverseSurface, fontSize: 12.5),
       ),
     );
   }
