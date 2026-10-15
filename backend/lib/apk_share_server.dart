@@ -6,6 +6,9 @@ import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
+import 'apk_meta.dart';
+import 'download_page.dart';
+
 /// Everything the companion server needs to run.
 class ServerConfig {
   const ServerConfig({
@@ -105,6 +108,10 @@ class ApkShareServer {
       final headOnly = method == 'HEAD';
       if (path == 'info') {
         response = _infoResponse();
+      } else if (path.startsWith('get/')) {
+        response = await _servePage(path.substring('get/'.length), headOnly);
+      } else if (path.startsWith('icon/')) {
+        response = await _serveIcon(path.substring('icon/'.length), headOnly);
       } else if (path.startsWith('download/')) {
         response = await _serveApk(
           path.substring('download/'.length),
@@ -269,6 +276,70 @@ class ApkShareServer {
       rangeHeader: request.headers['range'],
     );
   }
+
+  /// Resolves a URL-encoded APK name to a staged file, or an error response.
+  (File?, Response?) _resolveApk(String encodedName) {
+    String name;
+    try {
+      name = Uri.decodeComponent(encodedName);
+    } on FormatException {
+      return (null, _json(400, {'ok': false, 'error': 'Malformed file name.'}));
+    }
+    final safe = sanitizeFileName(name);
+    if (safe == null) {
+      return (null, _json(400, {'ok': false, 'error': 'Invalid file name.'}));
+    }
+    final file = File(p.join(storagePath, safe));
+    if (!file.existsSync()) {
+      return (null, _notFoundPage(safe));
+    }
+    return (file, null);
+  }
+
+  /// Phone-friendly landing page the QR code points to.
+  Future<Response> _servePage(String encodedName, bool headOnly) async {
+    final (file, error) = _resolveApk(encodedName);
+    if (error != null) return error;
+    final meta = await readApkMeta(file!);
+    final html = renderDownloadPage(
+      fileName: p.basename(file.path),
+      size: file.lengthSync(),
+      uploadedAt: file.lastModifiedSync(),
+      meta: meta,
+    );
+    return Response(
+      200,
+      body: headOnly ? null : html,
+      headers: const {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    );
+  }
+
+  Future<Response> _serveIcon(String encodedName, bool headOnly) async {
+    final (file, error) = _resolveApk(encodedName);
+    if (error != null) return error;
+    final icon = (await readApkMeta(file!)).iconPng;
+    if (icon == null) return Response.notFound('');
+    return Response(
+      200,
+      body: headOnly ? null : icon,
+      headers: {
+        'content-type': 'image/png',
+        'content-length': '${icon.length}',
+        'cache-control': 'no-store',
+      },
+    );
+  }
+
+  Response _notFoundPage(String name) => _html(
+    404,
+    renderMessagePage(
+      'File not found',
+      '"$name" is no longer on the server. Ask the sender to share it again.',
+    ),
+  );
 
   Response _deleteApk(String encodedName) {
     String name;

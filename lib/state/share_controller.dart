@@ -40,9 +40,14 @@ class ShareController extends ChangeNotifier {
   /// Origin other devices reach this machine on (never `127.0.0.1`).
   String get shareOrigin => 'http://${host.isEmpty ? '127.0.0.1' : host}:$port';
 
-  /// The exact URL encoded into the QR code.
+  /// Direct APK download URL.
   String? get downloadUrl =>
       staged == null ? null : '$shareOrigin${staged!.downloadPath}';
+
+  /// Landing page encoded into the QR code: app details + download button.
+  String? get pageUrl => staged == null
+      ? null
+      : '$shareOrigin/get/${Uri.encodeComponent(staged!.name)}';
 
   ShareController() {
     addLog(
@@ -219,7 +224,7 @@ class ShareController extends ChangeNotifier {
         LogKind.success,
       );
       await refreshFiles();
-      final url = downloadUrl;
+      final url = pageUrl;
       if (url != null) addLog(url, LogKind.transfer);
     } on ShareApiException catch (error) {
       stage = ShareStage.error;

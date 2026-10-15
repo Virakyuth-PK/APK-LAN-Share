@@ -33,14 +33,14 @@ class _QrShareCardState extends State<QrShareCard> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
-        final url = _controller.downloadUrl;
+        final url = _controller.pageUrl;
         final file = _controller.staged;
 
         return PanelCard(
           title: 'Share link',
           subtitle: url == null
               ? 'Appears once an APK is staged'
-              : 'Scan to download — same Wi-Fi only',
+              : 'Scan to open the download page — same Wi-Fi only',
           icon: Icons.qr_code_2_rounded,
           trailing: url == null
               ? null
