@@ -57,6 +57,53 @@ class HostedFile {
   String urlOn(String origin) => '$origin$downloadPath';
 }
 
+/// One phone downloading (or having downloaded) one APK.
+class DownloadEvent {
+  const DownloadEvent({
+    required this.id,
+    required this.file,
+    required this.ip,
+    required this.device,
+    required this.total,
+    required this.sent,
+    required this.status,
+    required this.startedAt,
+    this.finishedAt,
+  });
+
+  factory DownloadEvent.fromJson(Map<String, dynamic> json) => DownloadEvent(
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    file: json['file'] as String? ?? '',
+    ip: json['ip'] as String? ?? '',
+    device: json['device'] as String? ?? 'Unknown device',
+    total: (json['total'] as num?)?.toInt() ?? 0,
+    sent: (json['sent'] as num?)?.toInt() ?? 0,
+    status: json['status'] as String? ?? 'downloading',
+    startedAt:
+        DateTime.tryParse(json['startedAt'] as String? ?? '') ?? DateTime.now(),
+    finishedAt: DateTime.tryParse(json['finishedAt'] as String? ?? ''),
+  );
+
+  final int id;
+  final String file;
+  final String ip;
+  final String device;
+  final int total;
+  final int sent;
+
+  /// `downloading`, `done` or `aborted`.
+  final String status;
+  final DateTime startedAt;
+  final DateTime? finishedAt;
+
+  bool get isDownloading => status == 'downloading';
+  bool get isDone => status == 'done';
+  bool get isAborted => status == 'aborted';
+
+  /// 0.0–1.0.
+  double get progress => total <= 0 ? 0 : (sent / total).clamp(0.0, 1.0);
+}
+
 /// Payload returned by `GET /info`.
 class BackendInfo {
   const BackendInfo({
@@ -66,6 +113,7 @@ class BackendInfo {
     required this.storageDir,
     required this.servesUi,
     required this.files,
+    this.downloads = const [],
   });
 
   factory BackendInfo.fromJson(Map<String, dynamic> json) => BackendInfo(
@@ -78,6 +126,10 @@ class BackendInfo {
         .whereType<Map<String, dynamic>>()
         .map(HostedFile.fromJson)
         .toList(),
+    downloads: (json['downloads'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(DownloadEvent.fromJson)
+        .toList(),
   );
 
   final String lanIp;
@@ -86,4 +138,5 @@ class BackendInfo {
   final String storageDir;
   final bool servesUi;
   final List<HostedFile> files;
+  final List<DownloadEvent> downloads;
 }

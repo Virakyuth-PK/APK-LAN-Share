@@ -56,3 +56,6 @@ backend/.idea/
 # Run logs
 .run_logs/
 
+
+# AI scratch work (proposals, experiments)
+ai_work/

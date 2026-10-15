@@ -1,11 +1,11 @@
 {
-    "name": "apk_lan_share",
-    "short_name": "apk_lan_share",
+    "name": "APK LAN Share",
+    "short_name": "APK Share",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAFAFA",
+    "theme_color": "#4F46E5",
+    "description": "Share Android APKs over your local Wi-Fi with a QR code.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/share_models.dart';
@@ -34,6 +36,26 @@ class ShareController extends ChangeNotifier {
   String? activeFileName;
   int? activeFileSize;
 
+  /// True while a file is dragged over the page.
+  bool dragging = false;
+
+  void setDragging(bool value) {
+    if (value && busy) return;
+    if (dragging == value) return;
+    dragging = value;
+    notifyListeners();
+  }
+
+  /// Handles a file released anywhere on the page.
+  Future<void> dropFile(String fileName, Uint8List bytes) async {
+    if (busy) return;
+    if (!fileName.toLowerCase().endsWith('.apk')) {
+      addLog('Ignored drop — only .apk files can be shared.', LogKind.error);
+      return;
+    }
+    await stageFile(fileName: fileName, bytes: bytes);
+  }
+
   /// True while a file is being read or uploaded.
   bool get busy => stage == ShareStage.reading || stage == ShareStage.uploading;
 
@@ -45,9 +67,11 @@ class ShareController extends ChangeNotifier {
       staged == null ? null : '$shareOrigin${staged!.downloadPath}';
 
   /// Landing page encoded into the QR code: app details + download button.
-  String? get pageUrl => staged == null
-      ? null
-      : '$shareOrigin/get/${Uri.encodeComponent(staged!.name)}';
+  String? get pageUrl {
+    if (staged == null) return null;
+    if (shareAll && files.length > 1) return '$shareOrigin/get';
+    return '$shareOrigin/get/${Uri.encodeComponent(staged!.name)}';
+  }
 
   ShareController() {
     addLog(
@@ -86,6 +110,7 @@ class ShareController extends ChangeNotifier {
         port = info.port;
         if (!hostOverridden) host = info.lanIp;
         _restorePreviousSession(info);
+        _startPolling();
         if (verbose) {
           addLog('Backend online — ${info.baseUrl}', LogKind.success);
         }
@@ -238,6 +263,27 @@ class ShareController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Phones downloading or done, newest first.
+  List<DownloadEvent> get downloads => backend?.downloads ?? const [];
+  int get activeDownloads => downloads.where((d) => d.isDownloading).length;
+  int get finishedDownloads => downloads.where((d) => d.isDone).length;
+
+  /// When true the QR code opens the list of all staged APKs.
+  bool shareAll = false;
+
+  void setShareAll(bool value) {
+    shareAll = value;
+    notifyListeners();
+  }
+
+  Timer? _poll;
+
+  void _startPolling() {
+    _poll ??= Timer.periodic(const Duration(seconds: 2), (_) {
+      if (connected && !busy) refreshFiles();
+    });
+  }
+
   /// All APKs currently on the backend, newest first.
   List<HostedFile> get files => backend?.files ?? const [];
 
@@ -272,7 +318,9 @@ class ShareController extends ChangeNotifier {
     final api = _api;
     if (api == null) return;
     try {
-      backend = await api.fetchInfo();
+      final info = await api.fetchInfo();
+      backend = info;
+      if (shareAll && info.files.length < 2) shareAll = false;
       notifyListeners();
     } catch (_) {}
   }
@@ -310,6 +358,7 @@ class ShareController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _poll?.cancel();
     _api?.dispose();
     super.dispose();
   }

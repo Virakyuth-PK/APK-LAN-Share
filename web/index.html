@@ -18,21 +18,31 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Share Android APKs over your local Wi-Fi with a QR code.">
+  <meta name="theme-color" content="#4f46e5">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="apk_lan_share">
+  <meta name="apple-mobile-web-app-title" content="APK LAN Share">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>apk_lan_share</title>
+  <title>APK LAN Share</title>
+  <style>
+    html,body{margin:0;height:100%;background:#fafafa}
+    @media(prefers-color-scheme:dark){html,body{background:#09090b}}
+    #boot{position:fixed;inset:0;display:grid;place-items:center}
+    #boot i{width:22px;height:22px;border-radius:50%;border:2px solid #c7c7d1;
+      border-top-color:#4f46e5;animation:s .8s linear infinite}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <div id="boot"><i></i></div>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

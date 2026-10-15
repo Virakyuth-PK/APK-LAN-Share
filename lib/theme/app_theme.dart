@@ -5,7 +5,7 @@ class AppTheme {
   AppTheme._();
 
   /// Indigo — reads as "developer tooling" and keeps QR codes high-contrast.
-  static const Color seed = Color(0xFF4F46E5);
+  static const Color seed = Color(0xFF2563EB);
 
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark => _build(Brightness.dark);
@@ -19,19 +19,25 @@ class AppTheme {
 
     OutlineInputBorder border(Color color, {double width = 1.4}) =>
         OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: color, width: width),
         );
 
     return ThemeData(
       useMaterial3: true,
+      fontFamilyFallback: const [
+        'Inter',
+        '-apple-system',
+        'Segoe UI',
+        'Roboto',
+      ],
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark
           ? const Color(0xFF0B0D13)
           : const Color(0xFFF3F4FB),
       visualDensity: VisualDensity.comfortable,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: NoSplash.splashFactory,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -59,7 +65,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        fillColor: isDark ? const Color(0x33FFFFFF) : const Color(0x99FFFFFF),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -78,10 +84,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 48),
+          minimumSize: const Size(0, 44),
           padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
           textStyle: const TextStyle(
             fontSize: 14.5,
@@ -92,10 +98,10 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 48),
+          minimumSize: const Size(0, 44),
           padding: const EdgeInsets.symmetric(horizontal: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
           textStyle: const TextStyle(
             fontSize: 14.5,
@@ -125,7 +131,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(

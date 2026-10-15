@@ -34,51 +34,31 @@ class _QrShareCardState extends State<QrShareCard> {
       listenable: _controller,
       builder: (context, _) {
         final url = _controller.pageUrl;
-        final file = _controller.staged;
 
         return PanelCard(
           title: 'Share link',
           subtitle: url == null
               ? 'Appears once an APK is staged'
-              : 'Scan to open the download page — same Wi-Fi only',
+              : 'Scan with a phone on the same Wi-Fi',
           icon: Icons.qr_code_2_rounded,
           trailing: url == null
               ? null
-              : Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16A34A).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: const Color(0xFF16A34A).withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 14,
+              : const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 8, color: Color(0xFF16A34A)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Live',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                         color: Color(0xFF16A34A),
                       ),
-                      SizedBox(width: 6),
-                      Text(
-                        'Live',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF16A34A),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-          child: url == null
-              ? _placeholder(context)
-              : _qrBody(context, url, file?.name),
+          child: url == null ? _placeholder(context) : _qrBody(context, url),
         );
       },
     );
@@ -91,15 +71,14 @@ class _QrShareCardState extends State<QrShareCard> {
     final text = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
-          Icon(Icons.qr_code_2_rounded, size: 92, color: scheme.outline),
+          Icon(Icons.qr_code_2_rounded, size: 72, color: scheme.outline),
           const SizedBox(height: 14),
           Text(
             'QR code appears here',
@@ -119,11 +98,10 @@ class _QrShareCardState extends State<QrShareCard> {
     );
   }
 
-  Widget _qrBody(BuildContext context, String url, String? fileName) {
+  Widget _qrBody(BuildContext context, String url) {
     final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
     // Dark ink keeps scanners reliable in both light and dark themes.
-    const ink = Color(0xFF1E1B4B);
+    const ink = Color(0xFF18181B);
 
     return Column(
       children: [
@@ -132,14 +110,8 @@ class _QrShareCardState extends State<QrShareCard> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: [
-                BoxShadow(
-                  color: scheme.shadow.withValues(alpha: 0.12),
-                  blurRadius: 26,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: scheme.outlineVariant),
             ),
             child: QrImageView(
               data: url,
@@ -147,11 +119,11 @@ class _QrShareCardState extends State<QrShareCard> {
               backgroundColor: Colors.white,
               errorCorrectionLevel: QrErrorCorrectLevel.M,
               eyeStyle: const QrEyeStyle(
-                eyeShape: QrEyeShape.circle,
+                eyeShape: QrEyeShape.square,
                 color: ink,
               ),
               dataModuleStyle: const QrDataModuleStyle(
-                dataModuleShape: QrDataModuleShape.circle,
+                dataModuleShape: QrDataModuleShape.square,
                 color: ink,
               ),
             ),
@@ -204,75 +176,21 @@ class _QrShareCardState extends State<QrShareCard> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _MetaChip(
-              icon: Icons.android_outlined,
-              label: fileName ?? 'APK',
-              maxLabelWidth: 190,
+        if (_controller.files.length > 1) ...[
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(
+              'Share all ${_controller.files.length} APKs',
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            _MetaChip(icon: Icons.wifi_rounded, label: 'Same Wi-Fi network'),
-            _MetaChip(icon: Icons.phone_iphone_rounded, label: 'Any device'),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Text(
-          'Scan with any camera app. Devices must be on the same Wi-Fi; '
-          'the link also works when typed manually.',
-          textAlign: TextAlign.center,
-          style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-}
-
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({
-    required this.icon,
-    required this.label,
-    this.maxLabelWidth,
-  });
-
-  final IconData icon;
-  final String label;
-  final double? maxLabelWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final Widget labelText = maxLabelWidth == null
-        ? Text(label)
-        : ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxLabelWidth!),
-            child: Text(label, overflow: TextOverflow.ellipsis, maxLines: 1),
-          );
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 6),
-          DefaultTextStyle(
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurfaceVariant,
-            ),
-            child: labelText,
+            subtitle: const Text('QR opens a list with a button per file'),
+            value: _controller.shareAll,
+            onChanged: _controller.setShareAll,
           ),
         ],
-      ),
+      ],
     );
   }
 }

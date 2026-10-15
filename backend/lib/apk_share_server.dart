@@ -8,6 +8,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 
 import 'apk_meta.dart';
 import 'download_page.dart';
+import 'download_tracker.dart';
 
 /// Everything the companion server needs to run.
 class ServerConfig {
@@ -51,6 +52,7 @@ class ApkShareServer {
   final ServerConfig config;
 
   HttpServer? _server;
+  final DownloadTracker downloads = DownloadTracker();
   String _lanIp = '127.0.0.1';
 
   /// Absolute path of the staging directory.
@@ -108,6 +110,10 @@ class ApkShareServer {
       final headOnly = method == 'HEAD';
       if (path == 'info') {
         response = _infoResponse();
+      } else if (path == 'get' || path == 'get/') {
+        response = await _serveListPage(headOnly);
+      } else if (path == 'api/downloads') {
+        response = _downloadsResponse(request);
       } else if (path.startsWith('get/')) {
         response = await _servePage(path.substring('get/'.length), headOnly);
       } else if (path.startsWith('icon/')) {
@@ -147,6 +153,7 @@ class ApkShareServer {
     'storageDir': storagePath,
     'servesUi': uiPath != null,
     'files': _stagedFiles().map(_fileJson).toList(),
+    'downloads': downloads.toJson(),
   });
 
   List<File> _stagedFiles() {
@@ -274,6 +281,18 @@ class ApkShareServer {
       downloadName: safe,
       headOnly: headOnly,
       rangeHeader: request.headers['range'],
+      track: (body, start) {
+        final connection =
+            request.context['shelf.io.connection_info'] as HttpConnectionInfo?;
+        final record = downloads.begin(
+          file: safe,
+          ip: connection?.remoteAddress.address ?? 'unknown',
+          device: deviceLabel(request.headers['user-agent']),
+          total: file.lengthSync(),
+          offset: start,
+        );
+        return downloads.track(body, record);
+      },
     );
   }
 
@@ -294,6 +313,42 @@ class ApkShareServer {
       return (null, _notFoundPage(safe));
     }
     return (file, null);
+  }
+
+  /// Downloads seen by the server. `?mine=1` limits them to the caller's IP.
+  Response _downloadsResponse(Request request) {
+    final connection =
+        request.context['shelf.io.connection_info'] as HttpConnectionInfo?;
+    final mine = request.url.queryParameters['mine'] == '1';
+    return _json(200, {
+      'ok': true,
+      'downloads': downloads.toJson(
+        ip: mine ? connection?.remoteAddress.address : null,
+      ),
+    });
+  }
+
+  /// Phone page listing every staged APK, each with its own download button.
+  Future<Response> _serveListPage(bool headOnly) async {
+    final items = <ListItem>[];
+    for (final file in _stagedFiles()) {
+      items.add(
+        ListItem(
+          fileName: p.basename(file.path),
+          size: file.lengthSync(),
+          uploadedAt: file.lastModifiedSync(),
+          meta: await readApkMeta(file),
+        ),
+      );
+    }
+    return Response(
+      200,
+      body: headOnly ? null : renderListPage(items),
+      headers: const {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    );
   }
 
   /// Phone-friendly landing page the QR code points to.
@@ -367,15 +422,12 @@ class ApkShareServer {
     if (root == null || !Directory(root).existsSync()) {
       return _html(
         404,
-        '<!doctype html><meta charset="utf-8"><title>APK LAN Share</title>'
-        '<body style="font-family:system-ui;background:#0f1117;color:#e5e7eb;'
-        'display:grid;place-items:center;height:100vh;margin:0">'
-        '<div style="text-align:center;max-width:36rem;padding:2rem">'
-        '<h1 style="font-size:1.35rem">Server running — dashboard not built yet</h1>'
-        '<p style="color:#9ca3af">Run <code>flutter build web</code>, restart the '
-        'server with <code>--ui build/web</code>, or start the dev server with '
-        '<code>flutter run -d web-server --web-port 5000</code> and open that URL.'
-        '</p></div></body>',
+        renderMessagePage(
+          'Server running',
+          'The dashboard is not built yet. Run `flutter build web` and restart '
+              'with --ui build/web, or start the dev server with '
+              '`flutter run -d web-server --web-port 5000` and open that URL.',
+        ),
       );
     }
 
@@ -396,13 +448,8 @@ class ApkShareServer {
     return _fileResponse(file, contentType: mime, headOnly: headOnly);
   }
 
-  Response _notFoundUi(String rel) => _html(
-    404,
-    '<!doctype html><meta charset="utf-8"><title>404</title>'
-    '<body style="font-family:system-ui;display:grid;place-items:center;'
-    'height:100vh;margin:0">404 — <code>${_escapeHtml(rel)}</code> not found'
-    '</body>',
-  );
+  Response _notFoundUi(String rel) =>
+      _html(404, renderMessagePage('Not found', '"$rel" does not exist.'));
 
   // -------------------------------------------------------------- helpers
 
@@ -412,6 +459,7 @@ class ApkShareServer {
     String? downloadName,
     bool headOnly = false,
     String? rangeHeader,
+    Stream<List<int>> Function(Stream<List<int>> body, int start)? track,
   }) {
     final length = file.lengthSync();
     final headers = <String, String>{
@@ -453,7 +501,9 @@ class ApkShareServer {
       }
       return Response(
         206,
-        body: file.openRead(start, end + 1),
+        body: track == null
+            ? file.openRead(start, end + 1)
+            : track(file.openRead(start, end + 1), start),
         headers: {
           ...headers,
           'content-length': '${end - start + 1}',
@@ -461,7 +511,11 @@ class ApkShareServer {
         },
       );
     }
-    return Response(200, body: file.openRead(), headers: headers);
+    return Response(
+      200,
+      body: track == null ? file.openRead() : track(file.openRead(), 0),
+      headers: headers,
+    );
   }
 
   String _asciiFallback(String name) =>
@@ -515,12 +569,6 @@ class ApkShareServer {
     stderr.writeln('[$stamp] ${isError ? 'ERROR ' : ''}$message');
   }
 }
-
-String _escapeHtml(String value) => value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
 
 /// Accepts only safe, flat `.apk` file names. Returns `null` when rejected.
 String? sanitizeFileName(String rawName) {

@@ -71,19 +71,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
 
         return PanelCard(
           title: 'Network',
-          subtitle: 'Where this dashboard talks to the companion server',
+          subtitle: 'Companion server address',
           icon: Icons.lan_outlined,
-          trailing: connecting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(
-                  connected ? Icons.check_circle_rounded : Icons.error_rounded,
-                  size: 20,
-                  color: connected ? const Color(0xFF16A34A) : scheme.error,
-                ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -98,7 +87,6 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         decoration: const InputDecoration(
                           labelText: 'LAN IP address',
                           hintText: 'auto-detected',
-                          prefixIcon: Icon(Icons.wifi_outlined, size: 20),
                         ),
                       ),
                     ),
@@ -116,19 +104,13 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                         decoration: const InputDecoration(
                           labelText: 'Port',
                           hintText: '8080',
-                          prefixIcon: Icon(Icons.tag, size: 20),
                         ),
                       ),
                     ),
                   ];
                   final button = FilledButton.icon(
                     onPressed: connecting ? null : _apply,
-                    icon: Icon(
-                      connected
-                          ? Icons.refresh_rounded
-                          : Icons.play_arrow_rounded,
-                      size: 19,
-                    ),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: Text(connecting ? 'Connecting…' : 'Reconnect'),
                   );
 
@@ -139,15 +121,8 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                     );
                   }
                   return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...fields,
-                      const SizedBox(width: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: button,
-                      ),
-                    ],
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [...fields, const SizedBox(width: 12), button],
                   );
                 },
               ),
@@ -189,7 +164,7 @@ class _ConnectionPanelState extends State<ConnectionPanel> {
                           children: [
                             Text(
                               'Backend not reachable on port '
-                              '${_controller.port} — run it in a terminal:',
+                              '${_controller.port}. Run in a terminal:',
                               style: text.bodySmall?.copyWith(
                                 color: scheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
@@ -243,9 +218,8 @@ class _CommandChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [

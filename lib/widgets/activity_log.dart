@@ -74,7 +74,7 @@ class _ActivityLogState extends State<ActivityLog> {
           child: entries.isEmpty
               ? _empty(context)
               : SizedBox(
-                  height: 232,
+                  height: 200,
                   child: ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(top: 2),
@@ -92,17 +92,15 @@ class _ActivityLogState extends State<ActivityLog> {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 26),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          Icon(Icons.bolt_outlined, size: 30, color: scheme.outline),
-          const SizedBox(height: 10),
           Text(
-            'Staging and connection events will show up here.',
+            'Staging and connection events appear here.',
             style: Theme.of(context).textTheme.bodySmall
                 ?.copyWith(color: scheme.outline),
           ),
@@ -129,9 +127,9 @@ class _ActivityLogState extends State<ActivityLog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 8,
-            height: 8,
-            margin: const EdgeInsets.only(top: 6),
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 7),
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 11),
@@ -154,9 +152,7 @@ class _ActivityLogState extends State<ActivityLog> {
                 fontSize: mono ? 12.5 : 13.5,
                 height: 1.45,
                 fontFamily: mono ? 'monospace' : null,
-                fontWeight: entry.kind == LogKind.success
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight: FontWeight.w400,
                 color: color,
               ),
             ),

@@ -41,6 +41,30 @@ void main() {
     });
   });
 
+  group('DownloadEvent', () {
+    test('parses and computes progress', () {
+      final d = DownloadEvent.fromJson(const {
+        'id': 3,
+        'file': 'demo.apk',
+        'ip': '192.168.1.41',
+        'device': 'Pixel 8',
+        'total': 200,
+        'sent': 50,
+        'status': 'downloading',
+        'startedAt': '2026-10-15T22:00:00.000',
+      });
+      expect(d.device, 'Pixel 8');
+      expect(d.isDownloading, isTrue);
+      expect(d.progress, 0.25);
+    });
+
+    test('tolerates missing fields', () {
+      final d = DownloadEvent.fromJson(const {});
+      expect(d.progress, 0);
+      expect(d.device, 'Unknown device');
+    });
+  });
+
   group('BackendInfo', () {
     test('parses /info payload including files', () {
       final info = BackendInfo.fromJson(const {
