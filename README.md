@@ -23,6 +23,10 @@ any device on the same Wi-Fi can download them instantly.
 
 ---
 
+> **Quick start / Apple Shortcut setup:** see [GETTING_STARTED.md](GETTING_STARTED.md).
+
+---
+
 ## 1. Folder layout
 
 ```
