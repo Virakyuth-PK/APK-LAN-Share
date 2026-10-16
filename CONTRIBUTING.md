@@ -5,7 +5,9 @@
 ```
 apk-lan-share/
 ├── lib/                       Flutter Web dashboard
-│   ├── main.dart, app.dart
+│   ├── main.dart              picks entry per platform (entry_web / entry_io)
+│   ├── app.dart
+│   ├── android/               Android app: host_controller (in-process server), host_page
 │   ├── theme/app_theme.dart   glass light-blue theme
 │   ├── models/                ShareStage, HostedFile, BackendInfo, LogEntry
 │   ├── services/share_api.dart  /info client, XHR upload with byte progress
@@ -22,6 +24,9 @@ apk-lan-share/
 │       ├── apk_meta.dart          binary AndroidManifest + icon + SHA-256
 │       ├── download_page.dart     phone HTML pages
 │       └── download_tracker.dart  in-memory download records
+├── android/                   Android host; MainActivity.kt (hotspot settings), ShareService.kt (foreground service)
+├── assets/brand/              logo + adaptive icon SVG sources
+├── docs/                      README logo and screenshots
 ├── scripts/apk-share.sh       start / stop / status (used by Apple Shortcuts)
 └── run_app_with_server.sh     dev mode: backend + flutter run with hot reload
 ```
@@ -55,6 +60,14 @@ UI changes need `./scripts/apk-share.sh start --rebuild` to show in the one-port
 1. Dart Command Line App "Start Backend Server": `backend/bin/server.dart`, args `--port 8080 --no-ui`, working dir `backend/`.
 2. Flutter "Flutter Web (Chrome)": `lib/main.dart`, additional args `-d chrome --web-port 5000 --web-hostname 127.0.0.1`.
 3. Compound "Run App With Server": both of the above. Stop button stops both.
+
+## Android app
+
+```bash
+flutter run -d <device-id>        # needs JDK 17 (Android Studio's bundled JDK works)
+```
+
+The app imports `backend/` as a path dependency and runs `ApkShareServer` in-process. Icons: edit `assets/brand/*.svg`, re-render with `rsvg-convert` into `android/app/src/main/res/mipmap-*`.
 
 ## Checks
 

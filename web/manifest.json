@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FAFAFA",
-    "theme_color": "#4F46E5",
+    "theme_color": "#2563EB",
     "description": "Share Android APKs over your local Wi-Fi with a QR code.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

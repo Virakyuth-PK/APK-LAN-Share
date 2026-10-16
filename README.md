@@ -1,6 +1,32 @@
-# APK LAN Share
+<p align="center">
+  <img src="docs/logo.png" width="128" alt="APK LAN Share logo">
+</p>
 
-Share Android `.apk` files over Wi-Fi. Drop an APK on a local dashboard, scan the QR code with a phone, download. No cloud, no cable.
+<h1 align="center">APK LAN Share</h1>
+
+<p align="center">
+Share Android <code>.apk</code> files over Wi-Fi or a phone hotspot. Drop an APK on a dashboard, or pick one in the Android app, scan the QR code, download. No cloud, no cable.
+</p>
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%"><b>Web dashboard</b><br><img src="docs/screenshots/web-dashboard.png" alt="Web dashboard with QR code and live device downloads"></td>
+    <td align="center" width="25%"><b>Android app</b><br><img src="docs/screenshots/android-top.png" alt="Android app: staged APK and QR code"></td>
+    <td align="center" width="25%"><b>Android app: devices</b><br><img src="docs/screenshots/android-bottom.png" alt="Android app: hotspot steps and live downloads"></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="3"><b>Second device (usage)</b><br>Another phone opens the link and sees the APK details and download button.<br><img src="docs/screenshots/device-download.png" width="280" alt="Download page on a second device"></td>
+  </tr>
+</table>
+
+## Two ways to run
+
+| | Host | Other devices |
+|---|---|---|
+| **Web dashboard** | Computer (Flutter Web + Dart server) | Phones on the same Wi-Fi |
+| **Android app** | The phone itself (embedded server) | Any device joined to the phone's hotspot or Wi-Fi |
 
 ```
  Browser dashboard (Flutter Web)          Companion server (Dart, shelf)
@@ -21,8 +47,30 @@ Flutter Web cannot open sockets or serve files, so a small Dart server does the 
 - Live device downloads: see which phone downloads what, with progress. Resumable (HTTP Range).
 - Auto-detected LAN IP (prefers `192.168.x`, skips Docker/VM adapters). Override in the Network card.
 - Files persist across restarts.
+- Android app: host the share server on the phone and serve over its hotspot.
 
-## Quick start
+## Android app
+
+Prebuilt APKs: [DOWNLOAD.md](DOWNLOAD.md).
+
+The app runs the same server inside the phone, so no computer is needed.
+
+1. Open the app, tap **Choose APK** and pick one or more `.apk` files.
+2. Turn on the phone hotspot (**Open hotspot settings** jumps there).
+3. Join that hotspot from the other device, then scan the QR code or open the link shown (`http://<hotspot-ip>:8080/get`).
+
+The app detects the hotspot address (for example `192.168.43.1`) and lets you switch address if the phone has several. A foreground notification keeps the server alive while you switch apps. Live download progress per device is shown in the app.
+
+Build and install (needs a connected device or emulator, JDK 17):
+
+```bash
+flutter build apk --release        # build/app/outputs/flutter-apk/app-release.apk
+flutter run -d <device-id>         # debug run
+```
+
+Same code base: `lib/main.dart` starts the web dashboard on web and `lib/android/` on Android. Both reuse `backend/` as a Dart package.
+
+## Quick start (web dashboard)
 
 ```bash
 git clone <repo-url> apk-lan-share
@@ -75,5 +123,6 @@ LAN tool, no authentication. Anyone on your Wi-Fi who knows the URL can upload, 
 
 ## Docs
 
+- [DOWNLOAD.md](DOWNLOAD.md): prebuilt Android APKs per CPU architecture, checksums
 - [GETTING_STARTED.md](GETTING_STARTED.md): install, run, Apple Shortcuts, troubleshooting
 - [CONTRIBUTING.md](CONTRIBUTING.md): project layout, dev mode, Android Studio, tests

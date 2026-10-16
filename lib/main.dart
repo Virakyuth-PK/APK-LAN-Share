@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'app.dart';
+import 'entry_io.dart' if (dart.library.js_interop) 'entry_web.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ApkLanShareApp());
+  runApp(buildRootApp());
 }

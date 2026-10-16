@@ -73,6 +73,12 @@ class ApkShareServer {
   /// `http://<lan-ip>:<port>` — the base URL encoded into QR codes.
   String get baseUrl => 'http://$_lanIp:${config.port}';
 
+  /// Overrides the IP encoded into share URLs (e.g. a hotspot address).
+  void useLanIp(String value) => _lanIp = value;
+
+  /// Re-detects the LAN IP, e.g. after a hotspot is switched on.
+  Future<void> refreshLanIp() async => _lanIp = await detectLanIp();
+
   /// Whether the HTTP server is currently listening.
   bool get isRunning => _server != null;
 
@@ -589,8 +595,17 @@ String? sanitizeFileName(String rawName) {
   return name;
 }
 
-/// Best-effort detection of this machine's LAN IPv4 address.
-Future<String> detectLanIp() async {
+/// An IPv4 address on a network interface.
+typedef LanAddress = ({String name, String ip});
+
+/// Interface names a phone uses for its own hotspot (access point).
+bool isHotspotInterface(String name) {
+  final n = name.toLowerCase();
+  return n.startsWith('ap') || n.startsWith('swlan') || n.startsWith('wlan1');
+}
+
+/// Private IPv4 addresses on this machine, best candidate first.
+Future<List<LanAddress>> listLanAddresses() async {
   try {
     final interfaces = await NetworkInterface.list(
       includeLoopback: false,
@@ -598,30 +613,41 @@ Future<String> detectLanIp() async {
       type: InternetAddressType.IPv4,
     );
 
-    final scored = <({int score, String ip})>[];
+    final scored = <({int score, LanAddress address})>[];
     for (final interface in interfaces) {
       final name = interface.name.toLowerCase();
-      final penalty =
-          name.contains('docker') ||
-              name.contains('veth') ||
-              name.contains('vmnet') ||
-              name.contains('bridge') ||
-              name.contains('vbox')
-          ? 70
-          : 0;
+      var adjust = 0;
+      if (name.contains('docker') ||
+          name.contains('veth') ||
+          name.contains('vmnet') ||
+          name.contains('bridge') ||
+          name.contains('vbox')) {
+        adjust -= 70;
+      }
+      if (isHotspotInterface(name)) adjust += 20;
       for (final address in interface.addresses) {
         if (address.isLoopback || address.isLinkLocal) continue;
-        final score = scoreIp(address.address) - penalty;
-        if (score > 0) scored.add((score: score, ip: address.address));
+        final score = scoreIp(address.address) + adjust;
+        if (score > 0) {
+          scored.add((
+            score: score,
+            address: (name: interface.name, ip: address.address),
+          ));
+        }
       }
     }
 
     scored.sort((a, b) => b.score.compareTo(a.score));
-    if (scored.isNotEmpty) return scored.first.ip;
+    return [for (final item in scored) item.address];
   } catch (_) {
-    // Fall through to loopback.
+    return const [];
   }
-  return '127.0.0.1';
+}
+
+/// Best-effort detection of this machine's LAN IPv4 address.
+Future<String> detectLanIp() async {
+  final addresses = await listLanAddresses();
+  return addresses.isEmpty ? '127.0.0.1' : addresses.first.ip;
 }
 
 int scoreIp(String ip) {

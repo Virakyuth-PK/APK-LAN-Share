@@ -18,6 +18,12 @@ dependencies:
   file_picker: ^13.1.0
   # HTTP client used for the health check / info call.
   http: ^1.6.0
+  # In-process share server, reused by the Android app.
+  apk_lan_share_backend:
+    path: backend
+  # App-private storage for staged APKs on Android.
+  path_provider: ^2.1.5
+  path: ^1.9.0
   # Browser interop (XMLHttpRequest) so uploads report real byte progress.
   web: ^1.1.1
 
@@ -28,3 +34,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/logo.png
