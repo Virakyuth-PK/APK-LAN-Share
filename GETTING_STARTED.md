@@ -4,7 +4,7 @@ Share Android `.apk` files over Wi-Fi: drop an APK in the dashboard, scan the QR
 
 ## Requirements
 
-- macOS (the one-click Shortcut is macOS only; the server itself runs anywhere Flutter runs)
+- macOS for the one-click script and Shortcuts. On Linux/Windows run the server manually (see [CONTRIBUTING.md](CONTRIBUTING.md#dev-mode-hot-reload))
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.24+ (includes Dart)
 - Chrome (or any browser)
 - Computer and phone on the **same Wi-Fi**
@@ -64,13 +64,7 @@ The script sets its own `PATH` (looks in `~/fvm/default/bin`, `~/development/flu
 
 ## Developing the app
 
-Hot-reload mode (backend + Flutter dev server in Chrome):
-
-```bash
-./run_app_with_server.sh
-```
-
-Android Studio users: see [README_ANDROID_STUDIO.md](README_ANDROID_STUDIO.md). Full architecture and API: [README.md](README.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for hot-reload mode, Android Studio and tests. API reference: [README.md](README.md).
 
 ## Troubleshooting
 

@@ -43,7 +43,10 @@ class ServerConfig {
 ///   GET    /info                 -> JSON: LAN IP, port, storage dir, staged files
 ///   DELETE `/files/<file>.apk`      -> removes a staged APK
 ///   POST   `/upload?name=<file>.apk` -> raw request body is staged to disk
-///   GET    `/download/<file>.apk`    -> streams a staged APK
+///   GET    `/download/<file>.apk`    -> streams a staged APK (Range supported)
+///   GET    /get, /get/<file>.apk -> phone download pages
+///   GET    `/icon/<file>.apk`        -> icon extracted from the APK
+///   GET    /api/downloads        -> JSON: recent download records
 ///   GET    /                     -> Flutter web dashboard (if `uiDir` set)
 ///   OPTIONS *                    -> CORS preflight
 class ApkShareServer {
