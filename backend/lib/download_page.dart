@@ -79,6 +79,9 @@ font-size:1.02rem;text-decoration:none;border:1px solid #ffffff40}
 .done{display:none;justify-content:space-between;align-items:center}
 .chip{font-size:.78rem;font-weight:800;border-radius:99px;padding:5px 12px;background:var(--okbg);color:var(--ok)}
 .again{font-weight:700;font-size:.85rem;color:var(--brand);text-decoration:none}
+.open{display:inline-block;font-weight:800;font-size:.85rem;color:#fff;text-decoration:none;border-radius:99px;
+padding:6px 14px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+.acts{display:flex;gap:12px;align-items:center}
 .app[data-state=downloading] .btn,.app[data-state=done] .btn{display:none}
 .app[data-state=downloading] .prog{display:block}
 .app[data-state=done] .done{display:flex}
@@ -138,6 +141,24 @@ const _script = '''
 })();
 ''';
 
+/// Project name shown instead of the file name.
+String _projectName(ApkMeta meta, String fileName) =>
+    meta.label ?? meta.packageName ?? fileName;
+
+/// "v1.0.0 (build 1)" or null when the APK has no version info.
+String? _versionText(ApkMeta meta) {
+  if (meta.versionName == null && meta.versionCode == null) return null;
+  return [
+    if (meta.versionName != null) 'v${meta.versionName}',
+    if (meta.versionCode != null) 'build ${meta.versionCode}',
+  ].join(' · ');
+}
+
+// Android browsers cannot open a saved file directly; this intent opens the
+// system Downloads app where the APK can be tapped to install.
+const _openDownloads =
+    'intent:#Intent;action=android.intent.action.VIEW_DOWNLOADS;end';
+
 String _page(String title, String body, {bool script = false}) =>
     '<!doctype html><html lang="en"><head>'
     '<meta charset="utf-8">'
@@ -162,14 +183,11 @@ String _appCard({
   String? subtitle,
 }) {
   final enc = Uri.encodeComponent(fileName);
-  final title = meta.label ?? meta.packageName ?? fileName;
+  final title = _projectName(meta, fileName);
   final icon = meta.iconPng != null
       ? '<img src="/icon/$enc" alt="">'
       : _androidIcon;
-  final info = [
-    if (meta.versionName != null) 'v${meta.versionName}',
-    _formatBytes(size),
-  ].join(' · ');
+  final info = [?_versionText(meta), _formatBytes(size)].join(' · ');
   return '<div class="app" data-file="${_esc(fileName)}" data-state="idle">'
       '<div class="icon">$icon</div>'
       '<div><div class="name">${_esc(title)}</div>'
@@ -179,7 +197,8 @@ String _appCard({
       '<div class="prog"><div class="t"><span>Downloading…</span>'
       '<span class="pct"></span></div><div class="bar"><i></i></div></div>'
       '<div class="done"><span class="chip">✓ Downloaded</span>'
-      '<a class="again" href="/download/$enc" download>Download again</a></div>'
+      '<div class="acts"><a class="open" href="$_openDownloads">Open</a>'
+      '<a class="again" href="/download/$enc" download>Again</a></div></div>'
       '</div></div>';
 }
 
@@ -190,18 +209,13 @@ String renderDownloadPage({
   required DateTime uploadedAt,
   required ApkMeta meta,
 }) {
-  final title = meta.label ?? meta.packageName ?? fileName;
+  final title = _projectName(meta, fileName);
 
   final rows = <(String, String, bool)>[
     if (meta.packageName != null && meta.packageName != title)
       ('Package', meta.packageName!, false),
-    if (meta.versionName != null)
-      (
-        'Version',
-        meta.versionName! +
-            (meta.versionCode != null ? ' (${meta.versionCode})' : ''),
-        false,
-      ),
+    if (meta.versionName != null) ('Version', meta.versionName!, false),
+    if (meta.versionCode != null) ('Build', '${meta.versionCode}', false),
     ('Size', _formatBytes(size), false),
     if (meta.minSdk != null)
       ('Requires', '${androidVersionName(meta.minSdk!)} or newer', false),
@@ -273,7 +287,7 @@ String renderListPage(List<ListItem> items) {
     final item = items[i];
     final latest = i == 0 && items.length > 1;
     buf.write(
-      '<div class="glass">${_appCard(fileName: item.fileName, size: item.size, meta: item.meta, subtitle: [if (item.meta.versionName != null) 'v${item.meta.versionName}', _formatBytes(item.size), _formatDate(item.uploadedAt), if (latest) 'Latest'].join(' · '))}<p class="note" style="margin:10px 0 0">'
+      '<div class="glass">${_appCard(fileName: item.fileName, size: item.size, meta: item.meta, subtitle: [?_versionText(item.meta), _formatBytes(item.size), _formatDate(item.uploadedAt), if (latest) 'Latest'].join(' · '))}<p class="note" style="margin:10px 0 0">'
       '<a class="again" href="/get/${Uri.encodeComponent(item.fileName)}">'
       'Details</a></p></div>',
     );
