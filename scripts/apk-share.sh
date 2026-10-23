@@ -1,6 +1,7 @@
 #!/bin/bash
 # Start / stop APK LAN Share (backend + built dashboard on one port).
 # Usage: scripts/apk-share.sh start|stop|restart|status [--rebuild]
+#        scripts/apk-share.sh share <path-to-apk>
 # Safe to call from Apple Shortcuts (sets its own PATH).
 set -uo pipefail
 
@@ -85,10 +86,42 @@ status() {
   if is_running; then echo "Running (pid $(cat "$PID_FILE")) on port $PORT"; else echo "Not running"; fi
 }
 
+# Start the server if needed, then send the given APK to it.
+share() {
+  local apk="${1:-}"
+  if [[ -z "$apk" || ! -f "$apk" ]]; then
+    echo "APK not found: $apk"; notify "APK not found"; exit 1
+  fi
+  case "$apk" in
+    *.apk) ;;
+    *) echo "Not an APK: $apk"; notify "Not an APK"; exit 1 ;;
+  esac
+
+  # Start the server if needed (start() also opens the dashboard).
+  is_running || start ""
+
+  local name enc resp
+  name="$(basename "$apk")"
+  enc="$(printf '%s' "$name" | perl -MURI::Escape -ne 'print uri_escape($_)' 2>/dev/null || printf '%s' "$name")"
+
+  # Server API: POST /upload?name=<file>.apk with the raw APK as the body.
+  if resp="$(curl -fsS -X POST -H 'Content-Type: application/octet-stream' \
+      --data-binary "@$apk" "http://127.0.0.1:$PORT/upload?name=$enc" 2>&1)"; then
+    echo "Shared: $name"
+    notify "Shared $name"
+    open "http://127.0.0.1:$PORT"
+  else
+    echo "Upload failed: $resp"
+    notify "Upload failed"
+    exit 1
+  fi
+}
+
 case "${1:-}" in
   start)   start "${2:-}" ;;
   stop)    stop ;;
   restart) stop; sleep 1; start "${2:-}" ;;
   status)  status ;;
-  *) echo "Usage: $0 start|stop|restart|status [--rebuild]"; exit 1 ;;
+  share)   share "${2:-}" ;;
+  *) echo "Usage: $0 start|stop|restart|status [--rebuild] | share <apk>"; exit 1 ;;
 esac
